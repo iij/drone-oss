@@ -1,0 +1,39 @@
+---
+kind: pipeline
+type: docker
+name: linux-amd64
+
+platform:
+  arch: amd64
+  os: linux
+
+steps:
+- name: submodules
+  image: alpine/git
+  commands:
+  - git submodule init
+  - git submodule update --recursive --remote
+
+- name: build
+  image: golang:1.13.0
+  commands:
+  - sh build.sh
+  environment:
+    GOARCH: amd64
+    GOOS: linux
+
+- name: publish_drone
+  image: plugins/docker:18
+  settings:
+    auto_tag: true
+    auto_tag_suffix: linux-amd64
+    dockerfile: Dockerfile
+    repo: iij/drone-oss
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+  when:
+    event:
+    - push
+    - tag
